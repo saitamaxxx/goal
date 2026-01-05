@@ -1,0 +1,39 @@
+name: Auto News Bot
+
+on:
+  schedule:
+    # Run every hour (at minute 15 to avoid conflict with other bots)
+    - cron: '15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  post-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Requests
+        run: pip install requests
+
+      - name: Run News Bot
+        env:
+          FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: python news_bot.py
+
+      - name: Save Memory
+        run: |
+          git config --global user.name "NewsBot"
+          git config --global user.email "bot@noreply.github.com"
+          git add news_memory.txt
+          git commit -m "Update news memory" || echo "No new news"
+          git push
