@@ -1,0 +1,41 @@
+name: Goal Alert Bot
+
+on:
+  schedule:
+    # Check for goals every 5 minutes (Fastest GitHub allows)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-goals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Requests
+        run: pip install requests
+
+      - name: Run Goal Detector
+        env:
+          FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: python goal_bot.py
+
+      - name: Save Score History
+        run: |
+          git config --global user.name "GoalBot"
+          git config --global user.email "bot@noreply.github.com"
+          # We force add the json file
+          git add scores.json
+          # Commit only if there are changes
+          git commit -m "Update scores" || echo "No score changes"
+          git push
